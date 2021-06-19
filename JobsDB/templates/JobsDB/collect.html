@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>招聘网站爬虫管理系统</title>
+    <p><strong>职位信息爬取</strong></p>
+    <ul>
+        <li><a href="{% url 'JobsDB:index' %}">返回主页</a></li>
+        <li><a href="{% url 'JobsDB:overview' %}">数据总览</a></li>
+        <li><a href="{% url 'JobsDB:analysis' %}">数据分析</a></li>
+    </ul>
+    {% if error_message %}
+    <p style="color:red"><strong>{{error_message}}</strong></p>
+    {% endif %}
+    <p><strong>爬取选项：</strong></p>
+    <form action="{% url 'JobsDB:collect' %}" method="post">
+        {% csrf_token %}
+        招聘网站：
+        <select name="job_web">
+            <option selected="selected" value="51job">前程无忧</option>
+            <option value="zhaopin">智联招聘</option>
+            <option value="liepin">猎聘网</option>
+        </select><br>
+        爬取页数：
+        <input type="text" list="itemlist" name="page_num" placeholder="请选择">
+        <datalist id="itemlist">
+            <option>1</option>
+            <option>2</option>
+            <option>3</option>
+            <option>4</option>
+            <option>5</option>
+            <option>6</option>
+            <option>7</option>
+            <option>8</option>
+            <option>9</option>
+            <option>10</option>
+        </datalist><br>
+        <input type="submit" value="开始" />
+    </form>
+    {% if new_size %}
+    <p><strong>爬取完成：</strong></p>
+    <ul>
+        {% if new_size %}
+        <li><p><strong>本次爬取总数：{{new_size}}</strong></p></li>
+        {% endif %}
+        {% if update_size %}
+        <li><p><strong>更新数据：{{update_size}}</strong></p></li>
+        {% endif %}
+        {% if create_size %}
+        <li><p><strong>新增数据：{{create_size}}</strong></p></li>
+        {% endif %}
+        {% if error_size %}
+        <li><p><strong>错误数据：{{error_size}}</strong></p></li>
+        {% endif %}
+        {% if jobs_num %}
+        <li><p><strong>当前共有数据：{{jobs_num}}</strong></p></li>
+        {% endif %}
+    </ul>
+    {% endif %}
+    {% if jobs_list %}
+    <p><strong>本次新增/更新数据预览:</strong></p>
+        <table border="1px">
+            <tr>
+                <th>ID</th>
+                <th>职位</th>
+                <th>公司名称</th>
+                <th>薪酬</th>
+                <th>发布时间</th>
+                <th>公司地点</th>
+                <th>经验要求</th>
+                <th>学历要求</th>
+                <th>需求人数</th>
+                <th>任职要求</th>
+            </tr>
+            {% for job in jobs_list %}
+            <tr>
+                <td>{{ job.job_id }}</td>
+                <td>{{ job.job_name }}</td>
+                <td>{{ job.company_name }}</td>
+                <td>{{ job.provide_salary }}</td>
+                <td>{{ job.update_date }}</td>
+                <td>{{ job.company_location }}</td>
+                <td>{{ job.experience_requirement }}</td>
+                <td>{{ job.academic_requirements }}</td>
+                <td>{{ job.demand_num }}</td>
+                <td>{{ job.job_requirements }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+    {% endif %}
+</head>
+<body>

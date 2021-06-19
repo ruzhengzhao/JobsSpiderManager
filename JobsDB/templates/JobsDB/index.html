@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>招聘网站爬虫管理系统</title>
+    <p><strong>招聘网站爬虫管理系统</strong></p>
+    <ul>
+        <li><a href="{% url 'JobsDB:overview' %}">数据总览</a></li>
+        <li><a href="{% url 'JobsDB:analysis' %}">数据分析</a></li>
+        <li><a href="{% url 'JobsDB:collect' %}">职位信息爬取</a></li>
+    </ul>
+    {% if jobs_num %}
+    <p><strong>当前共有数据：{{jobs_num}}</strong></p>
+    {% endif %}
+    <p><strong>数据预览:</strong></p>
+    {% if jobs_list %}
+        <table border="1px">
+            <tr>
+                <th>ID</th>
+                <th>职位</th>
+                <th>公司名称</th>
+                <th>薪酬</th>
+                <th>发布时间</th>
+                <th>公司地点</th>
+                <th>经验要求</th>
+                <th>学历要求</th>
+                <th>需求人数</th>
+                <th>任职要求</th>
+            </tr>
+            {% for job in jobs_list %}
+            <tr>
+                <td>{{ job.job_id }}</td>
+                <td>{{ job.job_name }}</td>
+                <td>{{ job.company_name }}</td>
+                <td>{{ job.provide_salary }}</td>
+                <td>{{ job.update_date }}</td>
+                <td>{{ job.company_location }}</td>
+                <td>{{ job.experience_requirement }}</td>
+                <td>{{ job.academic_requirements }}</td>
+                <td>{{ job.demand_num }}</td>
+                <td>{{ job.job_requirements }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+    {% else %}
+        <p> No job information yet.</p>
+    {% endif %}
+</head>
+<body>
