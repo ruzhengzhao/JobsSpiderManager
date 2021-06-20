@@ -88,43 +88,42 @@ def _get_51job_requirements(html):
     return job_requirements
 
 
-def _save_as_excel(informations, header, path):
-    # list(dict)格式数据保存为excel
-    excel = xlwt.Workbook()
-    # 设置单元格
-    sheet1 = excel.add_sheet('Job', cell_overwrite_ok=True)
-    sheet1.write(0, 0, '序号')
-    sheet1.write(0, 1, '职位')
-    sheet1.write(0, 2, '公司名称')
-    sheet1.write(0, 3, '薪酬')
-    sheet1.write(0, 4, '发布时间')
-    sheet1.write(0, 5, '公司地点')
-    sheet1.write(0, 6, '经验要求')
-    sheet1.write(0, 7, '学历要求')
-    sheet1.write(0, 8, '需求人数')
-    sheet1.write(0, 9, '任职要求')
+def _get_zhaopin_page_html(page, header):
+    # 获取html
+    ur1 = str(page) + '&dt=4&ind=600000000&jt=21000100000000'
+    ur2 = 'https://xiaoyuan.zhaopin.com/search/jn=2&cts=548&pg='
+    url = ur2 + ur1
+    #print(url)
+    request = urllib.request.Request(url, headers=header)
+    response = urllib.request.urlopen(request)
+    html = response.read().decode('utf-8')
+    # print(html)# 读取源代码并转为unicode
+    return html
 
-    for i, information in enumerate(informations):
-        try:
-            job_url = information['job_href']
-            job_html = _get_51job_job_html(job_url, header)
-            job_require = _get_51job_requirements(job_html)
-            print(job_require)
 
-            sheet1.write(i+1, 0, i+1)  # 序号
-            sheet1.write(i+1, 1, information['job_name'])  # 职位
-            sheet1.write(i+1, 2, information['company_name'])  # 公司名称
-            sheet1.write(i+1, 3, information['providesalary_text'])   #薪酬
-            sheet1.write(i+1, 4, information['updatedate'])  # 发布时间
-            sheet1.write(i+1, 5, information['attribute_text'][0])  # 公司地点
-            sheet1.write(i+1, 6, information['attribute_text'][1])  # 经验要求
-            sheet1.write(i+1, 7, information['attribute_text'][2])  # 学历要求
-            sheet1.write(i+1, 8, _get_recruiting_numbers(information['attribute_text']))  # 需求人数
-            sheet1.write(i+1, 9, job_require)  # 任职要求
-
-        except Exception as e:
-            print(job_url)
-    excel.save(path)
+def _analysis_zhaopin_information(html):
+    # 解析html保存为list(dict)格式
+    jobs = []
+    reg = '(?<=__INITIAL_STATE__=).*?(?=</script>)'
+    json_infos = re.findall(reg, html)
+    # print("正则匹配成功数：{0}".format(len(json_infos)))
+    # print(json_infos)
+    for json_info in json_infos:
+        json_data = json.loads(json_info)
+        if 'souresult' in json_data:
+            # print("待解析岗位数：{0}".format(len(json_data['engine_search_result'])))
+            for raw_info in json_data['souresult']['Items']:
+                info = JobInformation()
+                info.job_id = raw_info.get("JobPositionNumber", "")
+                info.job_name = raw_info.get("JobTitle", "")
+                info.company_name = raw_info.get("CompanyName", "")
+                info.provide_salary = raw_info.get("MaxSalary", "")
+                info.update_date = raw_info.get("DateCreated", "")
+                info.demand_num = raw_info.get("RecruitCount", "")
+                info.company_location = raw_info.get("CityName", "")
+                jobs.append(info)
+    # print("解析成功岗位数：{0}".format(len(jobs)))
+    return jobs
 
 
 def crawling_51bob_infomation(page_num):
@@ -140,5 +139,22 @@ def crawling_51bob_infomation(page_num):
         page_html = _get_51job_page_html(i, header)
         # print(page_html)
         page_information = _analysis_51job_information(page_html)
+        information += page_information
+    return information
+
+
+def crawling_zhaopin_infomation(page_num):
+    # 模拟浏览器
+    header = {
+        'authority': 'xiaoyuan.zhaopin.com',
+        'path': '/search/jn=2&cts=548&pg=1&dt=4&ind=600000000&jt=21000100000000',
+        'Upgrade-Insecure-Requests': '1',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.77 Safari/537.36'
+    }
+    information = []
+    for i in range(1, page_num+1):
+        page_html = _get_zhaopin_page_html(i, header)
+        # print(page_html)
+        page_information = _analysis_zhaopin_information(page_html)
         information += page_information
     return information

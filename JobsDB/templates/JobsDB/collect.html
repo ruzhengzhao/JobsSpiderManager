@@ -3,6 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <title>招聘网站爬虫管理系统</title>
+</head>
+
+<body>
     <p><strong>职位信息爬取</strong></p>
     <ul>
         <li><a href="{% url 'JobsDB:index' %}">返回主页</a></li>
@@ -71,6 +74,7 @@
                 <th>学历要求</th>
                 <th>需求人数</th>
                 <th>任职要求</th>
+                <th>数据来源</th>
             </tr>
             {% for job in jobs_list %}
             <tr>
@@ -84,9 +88,10 @@
                 <td>{{ job.academic_requirements }}</td>
                 <td>{{ job.demand_num }}</td>
                 <td>{{ job.job_requirements }}</td>
+                <td>{{ job.source }}</td>
             </tr>
             {% endfor %}
         </table>
     {% endif %}
-</head>
-<body>
+</body>
+</html>

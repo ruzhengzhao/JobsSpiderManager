@@ -3,6 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <title>数据总览</title>
+</head>
+
+<body>
     <p><strong>数据总览</strong></p>
     <ul>
         <li><a href="{% url 'JobsDB:index' %}">返回主页</a></li>
@@ -12,7 +15,12 @@
     {% if jobs_num %}
     <p><strong>当前共有数据：{{jobs_num}}</strong></p>
     {% endif %}
-    <a href="{% url 'JobsDB:download' %}">导出为excel</a>
+    <a href="{% url 'JobsDB:download' %}">导出为excel</a><br>
+    <form action="{% url 'JobsDB:delete_all' %}" method="post">
+        {% csrf_token %}
+        <input type="hidden" name="del_all" value="True">
+        <input type="submit" value="删除全部" />
+    </form>
     {% if jobs_list %}
         <table border="1px">
             <tr>
@@ -26,6 +34,7 @@
                 <th>学历要求</th>
                 <th>需求人数</th>
                 <th>任职要求</th>
+                <th>数据来源</th>
                 <th>操作</th>
             </tr>
             {% for job in jobs_list %}
@@ -40,6 +49,7 @@
                 <td>{{ job.academic_requirements }}</td>
                 <td>{{ job.demand_num }}</td>
                 <td>{{ job.job_requirements }}</td>
+                <td>{{ job.source }}</td>
                 <td>
                     <form action="{% url 'JobsDB:delete' %}" method="post">
                         {% csrf_token %}
@@ -53,5 +63,5 @@
     {% else %}
         <p> No job information yet.</p>
     {% endif %}
-</head>
-<body>
+</body>
+</html>

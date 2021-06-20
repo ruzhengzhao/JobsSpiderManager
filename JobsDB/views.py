@@ -1,11 +1,15 @@
 import random
+import math
 import xlwt
 from django.shortcuts import render
 from django.http import HttpResponse, HttpResponseRedirect
 from django.urls import reverse
+from pyecharts.charts import Page, Bar
+from pyecharts import options as opts
 
 from .models import JobInfo
-from Spider.spider import crawling_51bob_infomation
+from Spider.spider import crawling_51bob_infomation, crawling_zhaopin_infomation
+
 
 def index(request):
     jobs_list = JobInfo.objects.all()
@@ -22,7 +26,16 @@ def delete(request):
         JobInfo.objects.filter(job_id=del_job_id).delete()
     except (KeyError, JobInfo.DoesNotExist):
         pass
-    return HttpResponseRedirect(reverse('JobsDB:index'))
+    return HttpResponseRedirect(reverse('JobsDB:overview'))
+
+
+def delete_all(request):
+    try:
+        if request.POST['del_all'] == 'True':
+            JobInfo.objects.all().delete()
+    except KeyError:
+        pass
+    return HttpResponseRedirect(reverse('JobsDB:overview'))
 
 
 def collect(request):
@@ -41,8 +54,14 @@ def collect(request):
     else:
         if job_web == '51job':
             new_list = crawling_51bob_infomation(page_num)
+            source = '前程无忧'
+        elif job_web == 'zhaopin':
+            new_list = crawling_zhaopin_infomation(page_num)
+            source = '智联招聘'
         else:
             new_list = []
+            source = '未知'
+
         new_size = len(new_list)
         update_size = 0
         create_size = 0
@@ -58,6 +77,8 @@ def collect(request):
             except:
                 error_size += 1
                 continue
+
+            info.source = source
             info.job_id = information.job_id
             info.job_name = information.job_name
             info.company_name = information.company_name
@@ -107,6 +128,7 @@ def download(request):
     sheet.write(0, 7, '学历要求')
     sheet.write(0, 8, '需求人数')
     sheet.write(0, 9, '任职要求')
+    sheet.write(0, 10, '数据来源')
 
     for i, info in enumerate(JobInfo.objects.all()):
         sheet.write(i + 1, 0, info.job_id)  # 序号
@@ -119,9 +141,30 @@ def download(request):
         sheet.write(i + 1, 7, info.academic_requirements)  # 学历要求
         sheet.write(i + 1, 8, info.demand_num)  # 需求人数
         sheet.write(i + 1, 9, info.job_requirements)  # 任职要求
+        sheet.write(i + 1, 10, info.source)  # 数据来源
     excel.save(response)
     return response
 
 
 def analysis(request):
-    return HttpResponse("分析页面没写好")
+    salary_list = []
+    for info in JobInfo.objects.all():
+        try:
+            salary_list.append(int(info.provide_salary))
+        except ValueError:
+            continue
+    interval_boundary = [0, 5000, 8000, 17000, 30000]
+    interval_name_list = []
+    interval_count = []
+    for i in range(len(interval_boundary)-1):
+        interval_name_list.append("[{0}-{1}]".format(interval_boundary[i], interval_boundary[i+1]))
+        interval_count.append(len([s for s in salary_list if interval_boundary[i + 1] > s >= interval_boundary[i]]))
+    page = Page()
+    chart = (
+        Bar()
+            .add_xaxis(interval_name_list)
+            .add_yaxis("收入区间", interval_count)
+            .set_global_opts(title_opts=opts.TitleOpts(title="收入分布"))
+    )
+    page.add(chart)
+    return HttpResponse(page.render_embed())
